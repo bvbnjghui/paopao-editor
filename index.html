@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>多草稿寫作後台 (響應式版)</title>
+    <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    
+    <style>
+        /* --- 基礎設定 --- */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            /* 關鍵：設定為視窗高度，並隱藏溢出，製造 App 感 */
+            height: 100vh; 
+            height: -webkit-fill-available; /* 解決 iOS Safari vh 問題 */
+            overflow: hidden; 
+            display: flex;
+        }
+
+        /* --- 左側側邊欄 (桌面預設) --- */
+        .sidebar {
+            width: 280px; /* 稍微加寬一點 */
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #ddd;
+            flex-shrink: 0; /* 防止被壓縮 */
+            transition: transform 0.3s ease-in-out;
+            z-index: 100;
+        }
+        .sidebar-header {
+            padding: 20px;
+            background-color: #34495e;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .sidebar-header h3 { margin: 0; font-size: 18px; }
+        
+        /* 手機版關閉側邊欄的按鈕 (預設隱藏) */
+        .close-sidebar-btn { 
+            display: none; 
+            background: none; border: none; color: white; font-size: 24px; cursor: pointer;
+        }
+
+        .new-post-btn {
+            width: 100%;
+            padding: 12px;
+            margin-top: 15px;
+            background-color: #27ae60;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .new-post-btn:hover { background-color: #2ecc71; }
+
+        .draft-list {
+            flex: 1;
+            overflow-y: auto; /* 側邊欄內部滾動 */
+            list-style: none;
+            padding: 0;
+            margin: 0;
+             -webkit-overflow-scrolling: touch; /* iOS 平滑滾動 */
+        }
+        .draft-item {
+            padding: 15px 20px;
+            border-bottom: 1px solid #34495e;
+            cursor: pointer;
+            position: relative;
+        }
+        .draft-item:hover { background-color: #3e5871; }
+        .draft-item.active { background-color: #3498db; }
+        .draft-title { font-weight: bold; display: block; margin-bottom: 5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
+        .draft-date { font-size: 12px; color: #bdc3c7; }
+        .delete-btn {
+            position: absolute;
+            right: 10px; top: 50%; transform: translateY(-50%);
+            background: #e74c3c; border: none; color: white;
+            width: 24px; height: 24px; border-radius: 50%;
+            font-size: 16px; line-height: 24px; padding: 0;
+            cursor: pointer; display: none;
+        }
+        .draft-item:hover .delete-btn { display: block; }
+
+        /* --- 右側主內容區 --- */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100%; /* 佔滿高度 */
+            overflow-y: auto; /* 主內容內部滾動 */
+            -webkit-overflow-scrolling: touch;
+            position: relative;
+        }
+
+        /* 手機版漢堡選單按鈕 (預設隱藏) */
+        .menu-toggle-btn {
+            display: none;
+            background: transparent;
+            border: none;
+            font-size: 24px;
+            padding: 15px;
+            cursor: pointer;
+            color: #2c3e50;
+            position: sticky; /* 固定在頂部 */
+            top: 0;
+            background: #f4f4f9;
+            z-index: 10;
+            text-align: left;
+            width: 100%;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .content-padding { padding: 20px 30px; flex: 1;}
+
+        .form-group { margin-bottom: 15px; }
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        
+        #editor-container {
+            /* 使用 CSS Grid 或 Flex 來讓編輯器佔據剩餘空間，而不是固定 vh */
+            flex: 1; 
+            min-height: 300px; /* 最小高度 */
+            background: white;
+            font-size: 16px;
+            display: flex; flex-direction: column;
+        }
+        /* 讓 Quill 的編輯區域自動伸展 */
+        .ql-container { flex: 1; overflow-y: auto; }
+
+        .actions {
+            margin-top: 20px;
+            margin-bottom: 40px; /* 底部留白，避免手機上被瀏覽器工具列擋住 */
+            display: flex; gap: 10px; flex-wrap: wrap;
+        }
+        button.action-btn {
+            padding: 12px 24px; border: none; border-radius: 4px;
+            cursor: pointer; font-size: 16px; flex: 1 1 auto; /* 手機上按鈕自動變寬 */
+            text-align: center;
+        }
+        .btn-primary { background-color: #3498db; color: white; }
+        .btn-success { background-color: #f39c12; color: white; }
+        .btn-save { background-color: #16a085; color: white; }
+        
+        #status {
+            margin-top: 15px; padding: 15px; border-radius: 4px;
+            display: none; text-align: center; font-weight: bold;
+        }
+        .status-sending { background-color: #fff3cd; color: #856404; display: block !important;}
+        .status-success { background-color: #d4edda; color: #155724; display: block !important;}
+
+        .settings-area { margin-bottom: 20px; padding: 10px; background: #eef2f3; border-radius: 4px;}
+        .settings-area summary { cursor: pointer; color: #7f8c8d; padding: 5px;}
+
+        /* 遮罩層 (手機版側邊欄打開時顯示) */
+        .overlay {
+            display: none;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); z-index: 90;
+        }
+
+        /* --- 📱 響應式媒體查詢 (重點修改) --- */
+        @media (max-width: 768px) {
+            /* 1. 顯示漢堡選單按鈕 */
+            .menu-toggle-btn { display: block; }
+            .close-sidebar-btn { display: block; }
+
+            /* 2. 側邊欄改為抽屜模式 (Off-canvas) */
+            .sidebar {
+                position: fixed; /* 固定定位 */
+                top: 0; left: 0;
+                height: 100%; /* 佔滿全高 */
+                width: 85%; /* 寬度為螢幕 85% */
+                max-width: 320px;
+                transform: translateX(-100%); /* 預設移出螢幕外 */
+                box-shadow: 2px 0 10px rgba(0,0,0,0.2);
+            }
+            /* 當添加此 class 時滑入 */
+            .sidebar.open { transform: translateX(0); }
+
+            /* 3. 顯示遮罩層 */
+            .overlay.active { display: block; }
+
+            /* 4. 調整主內容區的 padding */
+            .content-padding { padding: 15px; }
+
+            /* 5. 手機上刪除按鈕總是顯示 (因為沒有 hover) */
+            .delete-btn { display: block; position: static; margin-top: 10px; width: 100%; border-radius: 4px;}
+        }
+    </style>
+</head>
+<body>
+
+<div class="overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <h3>我的草稿箱</h3>
+        <button class="close-sidebar-btn" onclick="closeSidebar()">×</button>
+    </div>
+    <div style="padding: 0 20px;">
+        <button class="new-post-btn" onclick="createNewDraft()">+ 新增文章</button>
+    </div>
+    <ul class="draft-list" id="draft-list">
+        </ul>
+</div>
+
+<div class="main-content">
+    <button class="menu-toggle-btn" onclick="openSidebar()">☰ 切換草稿</button>
+
+    <div class="content-padding">
+        <details class="settings-area">
+            <summary>⚙️ 設定 Apps Script URL</summary>
+            <div class="form-group" style="margin-top: 10px;">
+                <input type="text" id="gas-url" placeholder="https://script.google.com/...." onchange="saveConfig()">
+            </div>
+        </details>
+
+        <div class="form-group">
+            <input type="text" id="post-title" placeholder="在此輸入文章標題..." style="font-size: 22px; font-weight: bold; border: none; border-bottom: 2px solid #ddd; background: transparent; padding: 10px 0;">
+        </div>
+
+        <div class="form-group">
+            <input type="text" id="post-tags" placeholder="標籤 (例如: Tech, Life)" style="font-size: 14px; color: #666;">
+        </div>
+
+        <div id="editor-container"></div>
+
+        <div id="status"></div>
+
+        <div class="actions">
+            <button class="action-btn btn-save" onclick="saveCurrentDraft(false)">💾 儲存 (Ctrl+S)</button>
+            <button class="action-btn btn-success" onclick="sendToSheet()">🚀 發佈</button>
+            </div>
+
+        <textarea id="html-output" style="width:100%; height:100px; margin-top:10px; display:none; background:#333; color:#fff;" readonly></textarea>
+    </div>
+</div>
+
+<script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
+<script>
+    // --- 1. 初始化 Quill 編輯器 ---
+    // 使用更適合手機的 Toolbar 配置
+    var quill = new Quill('#editor-container', {
+        theme: 'snow',
+        placeholder: '開始撰寫精彩內容...',
+        modules: {
+            toolbar: [
+                [{ 'header': [2, 3, false] }],
+                ['bold', 'italic', 'underline', 'blockquote'],
+                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                ['link', 'image'],
+                ['clean']
+            ]
+        }
+    });
+
+    const STORAGE_KEY_DRAFTS = 'writer_drafts_v2';
+    const STORAGE_KEY_CONFIG = 'writer_config';
+    let currentDraftId = null;
+
+    // --- 2. 核心邏輯：載入與儲存 ---
+
+    window.onload = function() {
+        // 修正 iOS 高度問題
+        document.body.style.height = window.innerHeight + 'px';
+        window.addEventListener('resize', () => {
+             document.body.style.height = window.innerHeight + 'px';
+        });
+
+        loadConfig();
+        renderDraftList();
+        
+        const drafts = getDrafts();
+        if (drafts.length > 0) {
+            loadDraft(drafts[0].id);
+        } else {
+            createNewDraft();
+        }
+    };
+
+    // --- 側邊欄開關控制 (新增功能) ---
+    function openSidebar() {
+        document.getElementById('sidebar').classList.add('open');
+        document.getElementById('sidebar-overlay').classList.add('active');
+    }
+
+    function closeSidebar() {
+        document.getElementById('sidebar').classList.remove('open');
+        document.getElementById('sidebar-overlay').classList.remove('active');
+    }
+
+    // 讀取所有草稿
+    function getDrafts() {
+        const json = localStorage.getItem(STORAGE_KEY_DRAFTS);
+        return json ? JSON.parse(json) : [];
+    }
+
+    // 渲染列表
+    function renderDraftList() {
+        const listEl = document.getElementById('draft-list');
+        const drafts = getDrafts();
+        drafts.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+
+        listEl.innerHTML = '';
+        drafts.forEach(draft => {
+            const li = document.createElement('li');
+            li.className = `draft-item ${draft.id === currentDraftId ? 'active' : ''}`;
+            // 點擊列表項目後，在手機版要自動關閉側邊欄
+            li.onclick = () => { 
+                loadDraft(draft.id); 
+                if (window.innerWidth <= 768) closeSidebar();
+            };
+            
+            const titleText = draft.title || '(無標題)';
+            const dateText = new Date(draft.updatedAt).toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute:'2-digit' });
+
+            // 手機版刪除按鈕改為文字並放在下方
+            const isMobile = window.innerWidth <= 768;
+            const deleteBtnHtml = isMobile 
+                ? `<button class="delete-btn" onclick="deleteDraft(event, '${draft.id}')">刪除此草稿</button>`
+                : `<button class="delete-btn" onclick="deleteDraft(event, '${draft.id}')">×</button>`;
+
+            li.innerHTML = `
+                <span class="draft-title">${titleText}</span>
+                <span class="draft-date">${dateText}</span>
+                ${deleteBtnHtml}
+            `;
+            listEl.appendChild(li);
+        });
+    }
+
+    // 新增草稿
+    function createNewDraft() {
+        currentDraftId = Date.now().toString();
+        document.getElementById('post-title').value = '';
+        document.getElementById('post-tags').value = '';
+        quill.setContents([]);
+        saveCurrentDraft(true);
+        renderDraftList();
+        document.getElementById('post-title').focus();
+        if (window.innerWidth <= 768) closeSidebar(); // 手機版新增後關閉側邊欄
+    }
+
+    // 載入草稿
+    function loadDraft(id) {
+        const drafts = getDrafts();
+        const draft = drafts.find(d => d.id === id);
+        if (draft) {
+            currentDraftId = id;
+            document.getElementById('post-title').value = draft.title || '';
+            document.getElementById('post-tags').value = draft.tags || '';
+            quill.root.innerHTML = draft.content || '';
+            renderDraftList();
+        }
+    }
+
+    // 儲存草稿
+    function saveCurrentDraft(silent = false) {
+        if (!currentDraftId) return;
+        const title = document.getElementById('post-title').value;
+        const tags = document.getElementById('post-tags').value;
+        const content = quill.root.innerHTML;
+        
+        let drafts = getDrafts();
+        const index = drafts.findIndex(d => d.id === currentDraftId);
+        const draftData = { id: currentDraftId, title, tags, content, updatedAt: new Date().toISOString() };
+
+        if (index > -1) { drafts[index] = draftData; } else { drafts.push(draftData); }
+        localStorage.setItem(STORAGE_KEY_DRAFTS, JSON.stringify(drafts));
+        renderDraftList();
+
+        if (!silent) {
+            const btn = document.querySelector('.btn-save');
+            const originalText = btn.innerText;
+            btn.innerText = '✅ 已儲存';
+            setTimeout(() => btn.innerText = originalText, 1000);
+        }
+    }
+
+    // 刪除草稿
+    function deleteDraft(event, id) {
+        event.stopPropagation();
+        if (confirm('確定要刪除這篇草稿嗎？')) {
+            let drafts = getDrafts();
+            drafts = drafts.filter(d => d.id !== id);
+            localStorage.setItem(STORAGE_KEY_DRAFTS, JSON.stringify(drafts));
+            if (currentDraftId === id) {
+                drafts.length > 0 ? loadDraft(drafts[0].id) : createNewDraft();
+            } else {
+                renderDraftList();
+            }
+        }
+    }
+
+    // --- 3. 設定與發送 ---
+    function saveConfig() { localStorage.setItem(STORAGE_KEY_CONFIG, document.getElementById('gas-url').value); }
+    function loadConfig() { 
+        const url = localStorage.getItem(STORAGE_KEY_CONFIG);
+        if (url) document.getElementById('gas-url').value = url;
+    }
+
+    document.addEventListener('keydown', function(e) {
+        if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveCurrentDraft(); }
+    });
+    quill.on('text-change', () => saveCurrentDraft(true));
+    document.getElementById('post-title').addEventListener('input', () => saveCurrentDraft(true));
+
+    function sendToSheet() {
+        const url = document.getElementById('gas-url').value;
+        const title = document.getElementById('post-title').value;
+        const content = quill.root.innerHTML;
+        const tags = document.getElementById('post-tags').value;
+        const statusDiv = document.getElementById('status');
+
+        if (!url) { alert('請設定 Apps Script URL'); return; }
+        if (!title) { alert('請填寫標題'); return; }
+        saveCurrentDraft(true); // 發送前先存檔
+
+        statusDiv.className = 'status-sending';
+        statusDiv.innerText = '⏳ 發送中...';
+
+        fetch(url, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title, content, tags })
+        })
+        .then(() => {
+            statusDiv.className = 'status-success';
+            statusDiv.innerText = '✅ 已發送請求！';
+            setTimeout(() => { statusDiv.style.display = 'none'; }, 3000); // 3秒後隱藏提示
+        })
+        .catch(error => {
+            statusDiv.className = '';
+            statusDiv.innerText = '❌ 發送失敗';
+        });
+    }
+</script>
+</body>
+</html>
