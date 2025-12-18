@@ -220,35 +220,39 @@
 
         // 1. 初始化：抓取資料
         window.onload = function () {
-            // 在實際開發中，請取消註解下面這行來抓取真實資料
-            fetchSheetData();
+            // 如果有設定 Google Sheet URL，則抓取真實資料
+            if (SHEET_CSV_URL && SHEET_CSV_URL.includes('docs.google.com')) {
+                fetchSheetData();
+            } else {
+                // 沒有設定 URL 時，使用模擬資料 (測試用)
+                console.log('未設定 SHEET_CSV_URL，使用模擬資料');
 
-            // --- 模擬資料 (測試用) ---
-            // 這裡模擬您的 Sheet 欄位結構
-            const mockData = [
-                {
-                    id: '1',
-                    title: '為什麼每天要喝 2000cc 的水？',
-                    category: '飲食',
-                    image: 'https://images.unsplash.com/photo-1548839140-29a749e1cf4d?auto=format&fit=crop&w=600&q=80',
-                    date: '2023-10-05',
-                    content: '<h1>水的重性</h1><p>水佔人體重量的 70%...</p><ul><li>促進代謝</li><li>維持體溫</li></ul>'
-                },
-                {
-                    id: '2',
-                    title: '初學者也能做的 10 分鐘居家運動',
-                    category: '運動',
-                    image: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=600&q=80',
-                    date: '2023-10-12',
-                    content: '<p class="ql-align-center"><strong>深蹲動作解析</strong></p><p>雙腳與肩同寬...</p>'
-                }
-            ];
-            allArticles = mockData; // 存入全域變數
-            document.getElementById('loading').style.display = 'none';
-            renderList(allArticles);
+                // --- 模擬資料 (測試用) ---
+                const mockData = [
+                    {
+                        id: '1',
+                        title: '為什麼每天要喝 2000cc 的水？',
+                        category: '飲食',
+                        image: 'https://images.unsplash.com/photo-1548839140-29a749e1cf4d?auto=format&fit=crop&w=600&q=80',
+                        publish: '2023-10-05T10:00:00.000Z',
+                        content: '<h1>水的重性</h1><p>水佔人體重量的 70%...</p><ul><li>促進代謝</li><li>維持體溫</li></ul>'
+                    },
+                    {
+                        id: '2',
+                        title: '初學者也能做的 10 分鐘居家運動',
+                        category: '運動',
+                        image: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=600&q=80',
+                        publish: '2023-10-12T10:00:00.000Z',
+                        content: '<p class="ql-align-center"><strong>深蹲動作解析</strong></p><p>雙腳與肩同寬...</p>'
+                    }
+                ];
+                allArticles = mockData; // 存入全域變數
+                document.getElementById('loading').style.display = 'none';
+                renderList(allArticles);
 
-            // 檢查網址是否有 #article-id，如果有則直接開啟該文章
-            checkHash();
+                // 檢查網址是否有 #article-id，如果有則直接開啟該文章
+                checkHash();
+            }
         };
 
         // 2. 抓取 Google Sheet 資料 (使用 PapaParse)
@@ -265,6 +269,14 @@
             });
         }
 
+        function formatDate(isoString) {
+            if (!isoString) return '';
+            // 嘗試解析日期，如果失敗則回傳原字串
+            const d = new Date(isoString);
+            if (isNaN(d.getTime())) return isoString;
+            return d.toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' });
+        }
+
         // 3. 渲染文章列表
         function renderList(articles) {
             const listEl = document.getElementById('article-list');
@@ -278,12 +290,15 @@
                 card.className = 'article-card';
                 card.onclick = () => openArticle(article.id);
 
+                // 相容 publish 或 date 欄位
+                const dateStr = formatDate(article.publish || article.date);
+
                 card.innerHTML = `
                     <img src="${article.image || 'https://via.placeholder.com/600x400'}" class="card-img" alt="${article.title}">
                     <div class="card-content">
                         <div class="card-tag">#${article.category}</div>
                         <h3 class="card-title">${article.title}</h3>
-                        <div class="card-date">${article.date}</div>
+                        <div class="card-date">${dateStr}</div>
                     </div>
                 `;
                 listEl.appendChild(card);
@@ -305,7 +320,8 @@
 
             // 填入內容
             document.getElementById('detail-title').innerText = article.title;
-            document.getElementById('detail-date').innerText = article.date;
+            // 相容 publish 或 date 欄位
+            document.getElementById('detail-date').innerText = formatDate(article.publish || article.date);
             document.getElementById('detail-category').innerText = article.category;
             // 關鍵：將 Quill 的 HTML 字串注入
             document.getElementById('detail-content').innerHTML = article.content;
