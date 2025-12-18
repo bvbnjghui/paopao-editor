@@ -1,20 +1,24 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>健康生活誌 | Health Blog</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
-    
+
     <style>
         /* --- 1. 基礎設定 (Base) --- */
         :root {
-            --primary-color: #5A8F7B; /* 鼠尾草綠 */
-            --bg-color: #F9FAF9;      /* 淺灰白背景 */
+            --primary-color: #5A8F7B;
+            /* 鼠尾草綠 */
+            --bg-color: #F9FAF9;
+            /* 淺灰白背景 */
             --text-color: #333;
-            --card-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
         }
+
         body {
             font-family: 'Noto Sans TC', sans-serif;
             background-color: var(--bg-color);
@@ -27,7 +31,7 @@
         header {
             background: #fff;
             padding: 1rem 2rem;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
             position: sticky;
             top: 0;
             z-index: 100;
@@ -35,9 +39,24 @@
             justify-content: space-between;
             align-items: center;
         }
-        .logo { font-size: 1.5rem; font-weight: 700; color: var(--primary-color); cursor: pointer; }
-        .nav-links span { margin-left: 20px; cursor: pointer; color: #666; transition: 0.3s; }
-        .nav-links span:hover { color: var(--primary-color); }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            cursor: pointer;
+        }
+
+        .nav-links span {
+            margin-left: 20px;
+            cursor: pointer;
+            color: #666;
+            transition: 0.3s;
+        }
+
+        .nav-links span:hover {
+            color: var(--primary-color);
+        }
 
         /* --- 3. 容器 (Container) --- */
         .container {
@@ -52,6 +71,7 @@
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
             gap: 2rem;
         }
+
         .article-card {
             background: #fff;
             border-radius: 12px;
@@ -60,26 +80,43 @@
             cursor: pointer;
             transition: transform 0.2s;
         }
-        .article-card:hover { transform: translateY(-5px); }
+
+        .article-card:hover {
+            transform: translateY(-5px);
+        }
+
         .card-img {
             width: 100%;
             height: 200px;
             object-fit: cover;
             background-color: #eee;
         }
-        .card-content { padding: 1.5rem; }
+
+        .card-content {
+            padding: 1.5rem;
+        }
+
         .card-tag {
             font-size: 0.8rem;
             color: var(--primary-color);
             font-weight: bold;
             text-transform: uppercase;
         }
-        .card-title { margin: 0.5rem 0; font-size: 1.25rem; }
-        .card-date { font-size: 0.85rem; color: #999; }
+
+        .card-title {
+            margin: 0.5rem 0;
+            font-size: 1.25rem;
+        }
+
+        .card-date {
+            font-size: 0.85rem;
+            color: #999;
+        }
 
         /* --- 5. 文章閱讀模式 (Detail View) --- */
         #article-detail {
-            display: none; /* 預設隱藏 */
+            display: none;
+            /* 預設隱藏 */
             max-width: 800px;
             margin: 0 auto;
             background: #fff;
@@ -87,6 +124,7 @@
             border-radius: 12px;
             box-shadow: var(--card-shadow);
         }
+
         .back-btn {
             display: inline-block;
             margin-bottom: 1rem;
@@ -94,15 +132,39 @@
             cursor: pointer;
             text-decoration: underline;
         }
-        
+
         /* --- 6. Quill 內容樣式適配 (重要！) --- */
         /* 這些是為了讓 Quill 匯出的 HTML 顯示正常 */
-        .ql-align-center { text-align: center; }
-        .ql-align-right { text-align: right; }
-        .ql-align-justify { text-align: justify; }
-        .article-body img { max-width: 100%; height: auto; border-radius: 8px; margin: 1rem 0; }
-        .article-body h1, .article-body h2 { color: var(--primary-color); margin-top: 2rem; }
-        .article-body p { margin-bottom: 1rem; font-size: 1.1rem; }
+        .ql-align-center {
+            text-align: center;
+        }
+
+        .ql-align-right {
+            text-align: right;
+        }
+
+        .ql-align-justify {
+            text-align: justify;
+        }
+
+        .article-body img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin: 1rem 0;
+        }
+
+        .article-body h1,
+        .article-body h2 {
+            color: var(--primary-color);
+            margin-top: 2rem;
+        }
+
+        .article-body p {
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+
         .article-body blockquote {
             border-left: 4px solid var(--primary-color);
             padding-left: 1rem;
@@ -111,10 +173,14 @@
         }
 
         /* --- 7. Loading 動畫 --- */
-        #loading { text-align: center; padding: 2rem; color: #999; }
-
+        #loading {
+            text-align: center;
+            padding: 2rem;
+            color: #999;
+        }
     </style>
 </head>
+
 <body>
 
     <header>
@@ -130,7 +196,7 @@
         <div id="loading">載入健康知識中...</div>
 
         <div id="article-list">
-            </div>
+        </div>
 
         <div id="article-detail">
             <div class="back-btn" onclick="goHome()">← 返回文章列表</div>
@@ -139,7 +205,7 @@
                 <span id="detail-date">2023-12-17</span> | <span id="detail-category">分類</span>
             </div>
             <div id="detail-content" class="article-body">
-                </div>
+            </div>
             <hr style="margin-top:3rem; border:0; border-top:1px solid #eee;">
             <p style="font-size:0.8rem; color:#888;">免責聲明：本網站內容僅供資訊分享，不能替代專業醫療建議。如有身體不適請務必就醫。</p>
         </div>
@@ -148,15 +214,15 @@
     <script>
         // 設定：請將此處換成您 Google Sheet 發布的 CSV 連結
         // 記得 Sheet 第一列要是標題：id, title, category, image, content, date
-        const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/您的SHEET_ID/pub?output=csv';
+        const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSLGlgGkqMx3KTD3MNqE2MnIjTjzWQPPny3IBU0x3GbQWOU9sOj_uePtFrjs-VSSztjp5aabc0-P21-/pub?gid=160705429&single=true&output=csv';
 
         let allArticles = [];
 
         // 1. 初始化：抓取資料
-        window.onload = function() {
+        window.onload = function () {
             // 在實際開發中，請取消註解下面這行來抓取真實資料
-            // fetchSheetData();
-            
+            fetchSheetData();
+
             // --- 模擬資料 (測試用) ---
             // 這裡模擬您的 Sheet 欄位結構
             const mockData = [
@@ -180,7 +246,7 @@
             allArticles = mockData; // 存入全域變數
             document.getElementById('loading').style.display = 'none';
             renderList(allArticles);
-            
+
             // 檢查網址是否有 #article-id，如果有則直接開啟該文章
             checkHash();
         };
@@ -190,7 +256,7 @@
             Papa.parse(SHEET_CSV_URL, {
                 download: true,
                 header: true,
-                complete: function(results) {
+                complete: function (results) {
                     allArticles = results.data;
                     document.getElementById('loading').style.display = 'none';
                     renderList(allArticles);
@@ -203,15 +269,15 @@
         function renderList(articles) {
             const listEl = document.getElementById('article-list');
             listEl.innerHTML = ''; // 清空
-            
+
             articles.forEach(article => {
                 // 如果是空行則略過
-                if(!article.title) return;
+                if (!article.title) return;
 
                 const card = document.createElement('div');
                 card.className = 'article-card';
                 card.onclick = () => openArticle(article.id);
-                
+
                 card.innerHTML = `
                     <img src="${article.image || 'https://via.placeholder.com/600x400'}" class="card-img" alt="${article.title}">
                     <div class="card-content">
@@ -265,17 +331,18 @@
 
         // 7. 監聽 Hash 變更 (處理瀏覽器上一頁/下一頁)
         window.onpopstate = checkHash;
-        
+
         function checkHash() {
             const hash = window.location.hash;
             if (hash.startsWith('#article-')) {
                 const id = hash.replace('#article-', '');
                 // 稍微延遲以確保資料已載入
-                if(allArticles.length > 0) openArticle(id);
+                if (allArticles.length > 0) openArticle(id);
             } else {
                 goHome();
             }
         }
     </script>
 </body>
+
 </html>
