@@ -1,0 +1,192 @@
+/* --- 基礎設定 --- */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: #f4f4f9;
+    margin: 0;
+    /* 關鍵：設定為視窗高度，並隱藏溢出，製造 App 感 */
+    height: 100vh; 
+    height: -webkit-fill-available; /* 解決 iOS Safari vh 問題 */
+    overflow: hidden; 
+    display: flex;
+}
+
+/* --- 左側側邊欄 (桌面預設) --- */
+.sidebar {
+    width: 280px; /* 稍微加寬一點 */
+    background-color: #2c3e50;
+    color: #ecf0f1;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid #ddd;
+    flex-shrink: 0; /* 防止被壓縮 */
+    transition: transform 0.3s ease-in-out;
+    z-index: 100;
+}
+.sidebar-header {
+    padding: 20px;
+    background-color: #34495e;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.sidebar-header h3 { margin: 0; font-size: 18px; }
+
+/* 手機版關閉側邊欄的按鈕 (預設隱藏) */
+.close-sidebar-btn { 
+    display: none; 
+    background: none; border: none; color: white; font-size: 24px; cursor: pointer;
+}
+
+.new-post-btn {
+    width: 100%;
+    padding: 12px;
+    margin-top: 15px;
+    background-color: #27ae60;
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 4px;
+    font-weight: bold;
+    font-size: 16px;
+}
+.new-post-btn:hover { background-color: #2ecc71; }
+
+.draft-list {
+    flex: 1;
+    overflow-y: auto; /* 側邊欄內部滾動 */
+    list-style: none;
+    padding: 0;
+    margin: 0;
+        -webkit-overflow-scrolling: touch; /* iOS 平滑滾動 */
+}
+.draft-item {
+    padding: 15px 20px;
+    border-bottom: 1px solid #34495e;
+    cursor: pointer;
+    position: relative;
+}
+.draft-item:hover { background-color: #3e5871; }
+.draft-item.active { background-color: #3498db; }
+.draft-title { font-weight: bold; display: block; margin-bottom: 5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
+.draft-date { font-size: 12px; color: #bdc3c7; }
+.delete-btn {
+    position: absolute;
+    right: 10px; top: 50%; transform: translateY(-50%);
+    background: #e74c3c; border: none; color: white;
+    width: 24px; height: 24px; border-radius: 50%;
+    font-size: 16px; line-height: 24px; padding: 0;
+    cursor: pointer; display: none;
+}
+.draft-item:hover .delete-btn { display: block; }
+
+/* --- 右側主內容區 --- */
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100%; /* 佔滿高度 */
+    overflow-y: auto; /* 主內容內部滾動 */
+    -webkit-overflow-scrolling: touch;
+    position: relative;
+}
+
+/* 手機版漢堡選單按鈕 (預設隱藏) */
+.menu-toggle-btn {
+    display: none;
+    background: transparent;
+    border: none;
+    font-size: 24px;
+    padding: 15px;
+    cursor: pointer;
+    color: #2c3e50;
+    position: sticky; /* 固定在頂部 */
+    top: 0;
+    background: #f4f4f9;
+    z-index: 10;
+    text-align: left;
+    width: 100%;
+    border-bottom: 1px solid #ddd;
+}
+
+.content-padding { padding: 20px 30px; flex: 1;}
+
+.form-group { margin-bottom: 15px; }
+input[type="text"] {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-size: 16px;
+}
+
+#editor-container {
+    /* 使用 CSS Grid 或 Flex 來讓編輯器佔據剩餘空間，而不是固定 vh */
+    flex: 1; 
+    min-height: 300px; /* 最小高度 */
+    background: white;
+    font-size: 16px;
+    display: flex; flex-direction: column;
+}
+/* 讓 Quill 的編輯區域自動伸展 */
+.ql-container { flex: 1; overflow-y: auto; }
+
+.actions {
+    margin-top: 20px;
+    margin-bottom: 40px; /* 底部留白，避免手機上被瀏覽器工具列擋住 */
+    display: flex; gap: 10px; flex-wrap: wrap;
+}
+button.action-btn {
+    padding: 12px 24px; border: none; border-radius: 4px;
+    cursor: pointer; font-size: 16px; flex: 1 1 auto; /* 手機上按鈕自動變寬 */
+    text-align: center;
+}
+.btn-primary { background-color: #3498db; color: white; }
+.btn-success { background-color: #f39c12; color: white; }
+.btn-save { background-color: #16a085; color: white; }
+
+#status {
+    margin-top: 15px; padding: 15px; border-radius: 4px;
+    display: none; text-align: center; font-weight: bold;
+}
+.status-sending { background-color: #fff3cd; color: #856404; display: block !important;}
+.status-success { background-color: #d4edda; color: #155724; display: block !important;}
+
+.settings-area { margin-bottom: 20px; padding: 10px; background: #eef2f3; border-radius: 4px;}
+.settings-area summary { cursor: pointer; color: #7f8c8d; padding: 5px;}
+
+/* 遮罩層 (手機版側邊欄打開時顯示) */
+.overlay {
+    display: none;
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.5); z-index: 90;
+}
+
+/* --- 📱 響應式媒體查詢 (重點修改) --- */
+@media (max-width: 768px) {
+    /* 1. 顯示漢堡選單按鈕 */
+    .menu-toggle-btn { display: block; }
+    .close-sidebar-btn { display: block; }
+
+    /* 2. 側邊欄改為抽屜模式 (Off-canvas) */
+    .sidebar {
+        position: fixed; /* 固定定位 */
+        top: 0; left: 0;
+        height: 100%; /* 佔滿全高 */
+        width: 85%; /* 寬度為螢幕 85% */
+        max-width: 320px;
+        transform: translateX(-100%); /* 預設移出螢幕外 */
+        box-shadow: 2px 0 10px rgba(0,0,0,0.2);
+    }
+    /* 當添加此 class 時滑入 */
+    .sidebar.open { transform: translateX(0); }
+
+    /* 3. 顯示遮罩層 */
+    .overlay.active { display: block; }
+
+    /* 4. 調整主內容區的 padding */
+    .content-padding { padding: 15px; }
+
+    /* 5. 手機上刪除按鈕總是顯示 (因為沒有 hover) */
+    .delete-btn { display: block; position: static; margin-top: 10px; width: 100%; border-radius: 4px;}
+}

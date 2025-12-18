@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>健康生活誌 | Health Blog</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    
+    <style>
+        /* --- 1. 基礎設定 (Base) --- */
+        :root {
+            --primary-color: #5A8F7B; /* 鼠尾草綠 */
+            --bg-color: #F9FAF9;      /* 淺灰白背景 */
+            --text-color: #333;
+            --card-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        /* --- 2. 導航列 (Navbar) --- */
+        header {
+            background: #fff;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo { font-size: 1.5rem; font-weight: 700; color: var(--primary-color); cursor: pointer; }
+        .nav-links span { margin-left: 20px; cursor: pointer; color: #666; transition: 0.3s; }
+        .nav-links span:hover { color: var(--primary-color); }
+
+        /* --- 3. 容器 (Container) --- */
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        /* --- 4. 文章列表模式 (Grid Layout) --- */
+        #article-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+        .article-card {
+            background: #fff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: var(--card-shadow);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        .article-card:hover { transform: translateY(-5px); }
+        .card-img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            background-color: #eee;
+        }
+        .card-content { padding: 1.5rem; }
+        .card-tag {
+            font-size: 0.8rem;
+            color: var(--primary-color);
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .card-title { margin: 0.5rem 0; font-size: 1.25rem; }
+        .card-date { font-size: 0.85rem; color: #999; }
+
+        /* --- 5. 文章閱讀模式 (Detail View) --- */
+        #article-detail {
+            display: none; /* 預設隱藏 */
+            max-width: 800px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 3rem;
+            border-radius: 12px;
+            box-shadow: var(--card-shadow);
+        }
+        .back-btn {
+            display: inline-block;
+            margin-bottom: 1rem;
+            color: var(--primary-color);
+            cursor: pointer;
+            text-decoration: underline;
+        }
+        
+        /* --- 6. Quill 內容樣式適配 (重要！) --- */
+        /* 這些是為了讓 Quill 匯出的 HTML 顯示正常 */
+        .ql-align-center { text-align: center; }
+        .ql-align-right { text-align: right; }
+        .ql-align-justify { text-align: justify; }
+        .article-body img { max-width: 100%; height: auto; border-radius: 8px; margin: 1rem 0; }
+        .article-body h1, .article-body h2 { color: var(--primary-color); margin-top: 2rem; }
+        .article-body p { margin-bottom: 1rem; font-size: 1.1rem; }
+        .article-body blockquote {
+            border-left: 4px solid var(--primary-color);
+            padding-left: 1rem;
+            color: #666;
+            font-style: italic;
+        }
+
+        /* --- 7. Loading 動畫 --- */
+        #loading { text-align: center; padding: 2rem; color: #999; }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo" onclick="goHome()">HealthBlog</div>
+        <div class="nav-links">
+            <span onclick="filterCategory('全部')">全部</span>
+            <span onclick="filterCategory('飲食')">飲食</span>
+            <span onclick="filterCategory('運動')">運動</span>
+        </div>
+    </header>
+
+    <div class="container">
+        <div id="loading">載入健康知識中...</div>
+
+        <div id="article-list">
+            </div>
+
+        <div id="article-detail">
+            <div class="back-btn" onclick="goHome()">← 返回文章列表</div>
+            <h1 id="detail-title">文章標題</h1>
+            <div style="color:#999; margin-bottom:2rem;">
+                <span id="detail-date">2023-12-17</span> | <span id="detail-category">分類</span>
+            </div>
+            <div id="detail-content" class="article-body">
+                </div>
+            <hr style="margin-top:3rem; border:0; border-top:1px solid #eee;">
+            <p style="font-size:0.8rem; color:#888;">免責聲明：本網站內容僅供資訊分享，不能替代專業醫療建議。如有身體不適請務必就醫。</p>
+        </div>
+    </div>
+
+    <script>
+        // 設定：請將此處換成您 Google Sheet 發布的 CSV 連結
+        // 記得 Sheet 第一列要是標題：id, title, category, image, content, date
+        const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/您的SHEET_ID/pub?output=csv';
+
+        let allArticles = [];
+
+        // 1. 初始化：抓取資料
+        window.onload = function() {
+            // 在實際開發中，請取消註解下面這行來抓取真實資料
+            // fetchSheetData();
+            
+            // --- 模擬資料 (測試用) ---
+            // 這裡模擬您的 Sheet 欄位結構
+            const mockData = [
+                {
+                    id: '1',
+                    title: '為什麼每天要喝 2000cc 的水？',
+                    category: '飲食',
+                    image: 'https://images.unsplash.com/photo-1548839140-29a749e1cf4d?auto=format&fit=crop&w=600&q=80',
+                    date: '2023-10-05',
+                    content: '<h1>水的重性</h1><p>水佔人體重量的 70%...</p><ul><li>促進代謝</li><li>維持體溫</li></ul>'
+                },
+                {
+                    id: '2',
+                    title: '初學者也能做的 10 分鐘居家運動',
+                    category: '運動',
+                    image: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=600&q=80',
+                    date: '2023-10-12',
+                    content: '<p class="ql-align-center"><strong>深蹲動作解析</strong></p><p>雙腳與肩同寬...</p>'
+                }
+            ];
+            allArticles = mockData; // 存入全域變數
+            document.getElementById('loading').style.display = 'none';
+            renderList(allArticles);
+            
+            // 檢查網址是否有 #article-id，如果有則直接開啟該文章
+            checkHash();
+        };
+
+        // 2. 抓取 Google Sheet 資料 (使用 PapaParse)
+        function fetchSheetData() {
+            Papa.parse(SHEET_CSV_URL, {
+                download: true,
+                header: true,
+                complete: function(results) {
+                    allArticles = results.data;
+                    document.getElementById('loading').style.display = 'none';
+                    renderList(allArticles);
+                    checkHash();
+                }
+            });
+        }
+
+        // 3. 渲染文章列表
+        function renderList(articles) {
+            const listEl = document.getElementById('article-list');
+            listEl.innerHTML = ''; // 清空
+            
+            articles.forEach(article => {
+                // 如果是空行則略過
+                if(!article.title) return;
+
+                const card = document.createElement('div');
+                card.className = 'article-card';
+                card.onclick = () => openArticle(article.id);
+                
+                card.innerHTML = `
+                    <img src="${article.image || 'https://via.placeholder.com/600x400'}" class="card-img" alt="${article.title}">
+                    <div class="card-content">
+                        <div class="card-tag">#${article.category}</div>
+                        <h3 class="card-title">${article.title}</h3>
+                        <div class="card-date">${article.date}</div>
+                    </div>
+                `;
+                listEl.appendChild(card);
+            });
+        }
+
+        // 4. 開啟單篇文章 (SPA 邏輯)
+        function openArticle(id) {
+            const article = allArticles.find(a => a.id === id);
+            if (!article) return;
+
+            // 更新網址 hash，方便分享
+            window.location.hash = `article-${id}`;
+
+            // 隱藏列表，顯示詳情
+            document.getElementById('article-list').style.display = 'none';
+            document.getElementById('article-detail').style.display = 'block';
+            window.scrollTo(0, 0);
+
+            // 填入內容
+            document.getElementById('detail-title').innerText = article.title;
+            document.getElementById('detail-date').innerText = article.date;
+            document.getElementById('detail-category').innerText = article.category;
+            // 關鍵：將 Quill 的 HTML 字串注入
+            document.getElementById('detail-content').innerHTML = article.content;
+        }
+
+        // 5. 返回首頁
+        function goHome() {
+            window.location.hash = '';
+            document.getElementById('article-list').style.display = 'grid';
+            document.getElementById('article-detail').style.display = 'none';
+        }
+
+        // 6. 分類篩選
+        function filterCategory(cat) {
+            goHome(); // 先回到列表模式
+            if (cat === '全部') {
+                renderList(allArticles);
+            } else {
+                const filtered = allArticles.filter(a => a.category === cat);
+                renderList(filtered);
+            }
+        }
+
+        // 7. 監聽 Hash 變更 (處理瀏覽器上一頁/下一頁)
+        window.onpopstate = checkHash;
+        
+        function checkHash() {
+            const hash = window.location.hash;
+            if (hash.startsWith('#article-')) {
+                const id = hash.replace('#article-', '');
+                // 稍微延遲以確保資料已載入
+                if(allArticles.length > 0) openArticle(id);
+            } else {
+                goHome();
+            }
+        }
+    </script>
+</body>
+</html>

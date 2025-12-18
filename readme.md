@@ -1,6 +1,6 @@
 # 📝 Serverless GAS CMS (無伺服器寫作後台)
 
-這是一個極輕量化、完全無需傳統後端伺服器（No-Backend）的寫作內容管理系統。它使用 Google Sheets 作為資料庫，Google Apps Script (GAS) 作為 API 介面，並透過單一的靜態 HTML 檔案 進行寫作與管理。
+這是一個極輕量化、完全無需傳統後端伺服器（No-Backend）的寫作內容管理系統。它使用 Google Sheets 作為資料庫，Google Apps Script (GAS) 作為 API 介面，並透過 **HTML + CSS + JS** (分離式架構) 進行寫作與管理。
 
 適合想要擁有個人部落格、但不想維護伺服器或支付主機費用的開發者與創作者。
 
@@ -32,24 +32,29 @@ function doPost(e) {
   lock.tryLock(10000);
 
   try {
-    // 解析前端傳來的 JSON 資料
-    var postDataString = e.postData.contents;
-    var data = JSON.parse(postDataString);
-    
+    var data = JSON.parse(e.postData.contents);
     var doc = SpreadsheetApp.getActiveSpreadsheet();
-    var sheet = doc.getSheetByName('Posts'); 
+    var sheet = doc.getSheetByName('Posts');
     
-    // 如果找不到工作表，自動建立
     if (!sheet) {
       sheet = doc.insertSheet('Posts');
-      sheet.appendRow(['Timestamp', 'Title', 'Content', 'Tags']);
+      // 設定標題列 (Headers)
+      sheet.appendRow(['id', 'slug', 'title', 'tags', 'category', 'image', 'content', 'publish', 'update']);
     }
     
-    var timestamp = new Date();
-    // 寫入資料：時間, 標題, HTML內容, 標籤
-    sheet.appendRow([timestamp, data.title, data.content, data.tags]);
+    // 寫入資料
+    sheet.appendRow([
+      data.id,
+      data.slug,
+      data.title,
+      data.tags,
+      data.category,
+      data.image,
+      data.content,
+      data.publish,
+      data.update
+    ]);
 
-    // 回傳成功訊息
     return ContentService
       .createTextOutput(JSON.stringify({ "result": "success" }))
       .setMimeType(ContentService.MimeType.JSON);
@@ -62,6 +67,7 @@ function doPost(e) {
     lock.releaseLock();
   }
 }
+
 ```
 
 5.  點擊右上角的 **部署 (Deploy)** > **新增部署 (New deployment)**。
@@ -74,7 +80,9 @@ function doPost(e) {
 
 ### 第二步：設定前端 (寫作介面)
 
-1.  下載本專案的 `index.html`。
+1.  下載本專案的 `index.html`, `style.css`, `script.js`。
+2.  將它們放在同一個資料夾中。
+3.  使用 Chrome / Edge / Safari 等瀏覽器直接打開 `index.html`。
 2.  使用 Chrome / Edge / Safari 等瀏覽器直接打開 `index.html`。
 3.  在介面上方的 **⚙️ 設定** 區塊中，貼上剛剛複製的 Web App URL。
 4.  系統會自動記住此網址，之後無需重複輸入。
