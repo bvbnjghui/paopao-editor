@@ -193,6 +193,7 @@ document.getElementById('post-title').addEventListener('input', () => saveCurren
 document.getElementById('post-slug').addEventListener('input', () => saveCurrentDraft(true));
 document.getElementById('post-category').addEventListener('input', () => saveCurrentDraft(true));
 document.getElementById('post-image').addEventListener('input', () => saveCurrentDraft(true));
+document.getElementById('post-tags').addEventListener('input', () => saveCurrentDraft(true));
 
 function sendToSheet() {
     const url = document.getElementById('gas-url').value;
