@@ -195,6 +195,111 @@ document.getElementById('post-category').addEventListener('input', () => saveCur
 document.getElementById('post-image').addEventListener('input', () => saveCurrentDraft(true));
 document.getElementById('post-tags').addEventListener('input', () => saveCurrentDraft(true));
 
+// --- 圖片處理邏輯 ---
+document.getElementById('image-upload').addEventListener('change', function (e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) { // 簡單的前端檢查，雖然後面會壓縮
+        alert('檔案過大，建議使用 5MB 以下的圖片');
+    }
+
+    const reader = new FileReader();
+    reader.onload = function (event) {
+        const img = new Image();
+        img.onload = function () {
+            // 壓縮與縮放
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+
+            // 設定最大寬度
+            const MAX_WIDTH = 1200;
+            let width = img.width;
+            let height = img.height;
+
+            if (width > MAX_WIDTH) {
+                height *= MAX_WIDTH / width;
+                width = MAX_WIDTH;
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            ctx.drawImage(img, 0, 0, width, height);
+
+            // 輸出為 Base64 JPEG, 品質 0.7
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+
+            // 設定回 input 並觸發儲存
+            const input = document.getElementById('post-image');
+            input.value = dataUrl;
+            updateImagePreview();
+            saveCurrentDraft(true);
+        }
+        img.src = event.target.result;
+    }
+    reader.readAsDataURL(file);
+});
+
+// 手動輸入網址時也要更新預覽
+document.getElementById('post-image').addEventListener('input', () => {
+    updateImagePreview();
+    saveCurrentDraft(true); // 觸發儲存
+});
+
+function updateImagePreview() {
+    const url = document.getElementById('post-image').value;
+    const previewContainer = document.getElementById('image-preview-container');
+    const previewImg = document.getElementById('image-preview');
+    const clearBtn = document.querySelector('.clear-img-btn');
+
+    if (url) {
+        previewContainer.style.display = 'flex';
+        previewImg.src = url;
+        clearBtn.style.display = 'block';
+    } else {
+        previewContainer.style.display = 'none';
+        previewImg.src = '';
+        clearBtn.style.display = 'none';
+    }
+}
+
+function clearImage() {
+    document.getElementById('post-image').value = '';
+    document.getElementById('image-upload').value = ''; // 清空 file input
+    updateImagePreview();
+    saveCurrentDraft(true);
+}
+
+// 載入時檢查預覽
+const originalLoadDraft = window.loadDraft; // Hook 原有的 loadDraft (或者直接修改上面的 loadDraft) 
+// 為了避免複雜 hook，這裡還是建議直接修改上面的 loadDraft 函數比較乾淨，
+// 但因為我現在是在 append 代碼，所以我在這裡用 hook 或者直接讓 window.onload 呼叫後的 render 處理
+// 更好的方式是看上面 loadDraft 實作... 
+// 上面的 loadDraft 已經設定了 input value，所以只需要在 loadDraft 之後呼叫 updateImagePreview
+// 我們可以在 window 這裡覆寫 loadDraft，或是直接修改上面的。
+// 為了保持程式碼整潔，我把這段邏輯移到上面的 loadDraft 函數內會更好。
+// 但因為我是 append 在最後，所以我選擇覆寫 loadDraft
+window.loadDraft = function (id) {
+    const drafts = getDrafts();
+    const draft = drafts.find(d => d.id === id);
+    if (draft) {
+        currentDraftId = id;
+        document.getElementById('post-title').value = draft.title || '';
+        document.getElementById('post-tags').value = draft.tags || '';
+        document.getElementById('post-slug').value = draft.slug || '';
+        document.getElementById('post-category').value = draft.category || '';
+        document.getElementById('post-image').value = draft.image || '';
+        quill.root.innerHTML = draft.content || '';
+        renderDraftList();
+
+        // 新增: 更新圖片預覽
+        updateImagePreview();
+
+        // 手機版自動收合
+        if (window.innerWidth <= 768) closeSidebar();
+    }
+}
+
 function sendToSheet() {
     const url = document.getElementById('gas-url').value;
     const title = document.getElementById('post-title').value;

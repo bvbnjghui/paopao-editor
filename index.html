@@ -53,7 +53,17 @@
                 <input type="text" id="post-category" placeholder="分類" style="flex: 1;">
             </div>
             <div class="form-group">
-                <input type="text" id="post-image" placeholder="精選圖片 URL (https://...)">
+                <label style="display: block; margin-bottom: 5px; font-weight: bold; color: #34495e;">精選圖片</label>
+                <div class="image-upload-wrapper">
+                    <input type="text" id="post-image" placeholder="圖片網址 (或是上傳圖片)" style="flex: 1;">
+                    <input type="file" id="image-upload" accept="image/*" style="display: none;">
+                    <button class="upload-btn" onclick="document.getElementById('image-upload').click()">📁 上傳</button>
+                    <!-- 清除按鈕 -->
+                    <button class="clear-img-btn" onclick="clearImage()" style="display: none;">🗑️</button>
+                </div>
+                <div id="image-preview-container" style="display: none; margin-top: 10px;">
+                    <img id="image-preview" src="" alt="預覽圖">
+                </div>
             </div>
 
             <div id="editor-container"></div>
