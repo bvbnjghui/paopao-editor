@@ -226,8 +226,8 @@ document.getElementById('image-upload').addEventListener('change', function (e) 
             canvas.height = height;
             ctx.drawImage(img, 0, 0, width, height);
 
-            // 輸出為 Base64 JPEG, 品質 0.7
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+            // 輸出為 Base64 WebP, 品質 0.8 (WebP 通常比 JPEG 小且支援透明)
+            const dataUrl = canvas.toDataURL('image/webp', 0.8);
 
             // 設定回 input 並觸發儲存
             const input = document.getElementById('post-image');
