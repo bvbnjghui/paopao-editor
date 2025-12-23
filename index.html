@@ -24,6 +24,9 @@
         </div>
         <ul class="draft-list" id="draft-list">
         </ul>
+        <div class="sidebar-footer">
+            <button class="help-btn" onclick="openTutorialModal()">❓ 操作說明</button>
+        </div>
     </div>
 
     <div class="main-content">
@@ -78,6 +81,212 @@
             <textarea id="html-output"
                 style="width:100%; height:100px; margin-top:10px; display:none; background:#333; color:#fff;"
                 readonly></textarea>
+        </div>
+    </div>
+
+    <!-- 教學 Modal -->
+    <div class="tutorial-modal" id="tutorial-modal" onclick="closeTutorialModal()">
+        <div class="tutorial-content" onclick="event.stopPropagation()">
+            <button class="tutorial-close" onclick="closeTutorialModal()">×</button>
+            <h2>📚 平台操作說明</h2>
+
+            <div class="tutorial-body">
+                <div class="tutorial-section">
+                    <h3>👋 歡迎使用</h3>
+                    <p>這是一個完全免費、無需伺服器的寫作平台。即使您從未接觸過程式語言，也能輕鬆上手！</p>
+                    <p>本平台使用 <strong>Google Sheets</strong> 作為資料庫，透過 <strong>Google Apps Script</strong> 來儲存您的文章。</p>
+                </div>
+
+                <div class="tutorial-section">
+                    <h3>🔧 第一步：設定 Google Apps Script</h3>
+                    <p>在開始寫作之前，您需要先建立一個 Google Sheet 來儲存文章。請依照以下步驟操作：</p>
+
+                    <div class="tutorial-step">
+                        <h4>1. 建立 Google Sheet</h4>
+                        <ul>
+                            <li>前往 <a href="https://sheets.google.com" target="_blank">Google Sheets</a></li>
+                            <li>點擊「空白」建立新試算表</li>
+                            <li>將工作表名稱從「工作表1」改為 <code>Posts</code>（注意大小寫）</li>
+                        </ul>
+                    </div>
+
+                    <div class="tutorial-step">
+                        <h4>2. 開啟 Apps Script 編輯器</h4>
+                        <ul>
+                            <li>在 Google Sheet 中，點擊上方選單的「<strong>擴充功能</strong>」</li>
+                            <li>選擇「<strong>Apps Script</strong>」</li>
+                            <li>會開啟一個新的程式碼編輯視窗</li>
+                        </ul>
+                    </div>
+
+                    <div class="tutorial-step">
+                        <h4>3. 貼上程式碼</h4>
+                        <p>將編輯器中的所有內容清空，然後複製以下程式碼並貼上：</p>
+                        <div class="code-block">
+                            <pre>function doPost(e) {
+  var lock = LockService.getScriptLock();
+  lock.tryLock(10000);
+
+  try {
+    var data = JSON.parse(e.postData.contents);
+    var doc = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = doc.getSheetByName('Posts');
+    
+    if (!sheet) {
+      sheet = doc.insertSheet('Posts');
+      sheet.appendRow(['id', 'slug', 'title', 'tags', 
+                       'category', 'image', 'content', 
+                       'publish', 'update']);
+    }
+    
+    sheet.appendRow([
+      data.id,
+      data.slug,
+      data.title,
+      data.tags,
+      data.category,
+      data.image,
+      data.content,
+      data.publish,
+      data.update
+    ]);
+
+    return ContentService
+      .createTextOutput(JSON.stringify({ 
+        "result": "success" 
+      }))
+      .setMimeType(ContentService.MimeType.JSON);
+
+  } catch (e) {
+    return ContentService
+      .createTextOutput(JSON.stringify({ 
+        "result": "error", 
+        "error": e.toString() 
+      }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } finally {
+    lock.releaseLock();
+  }
+}</pre>
+                        </div>
+                        <p class="tip">💡 不用擔心看不懂程式碼，只要完整複製貼上即可！</p>
+                    </div>
+
+                    <div class="tutorial-step">
+                        <h4>4. 部署為網頁應用程式</h4>
+                        <ul>
+                            <li>點擊右上角的「<strong>部署</strong>」按鈕</li>
+                            <li>選擇「<strong>新增部署</strong>」</li>
+                            <li>點擊「類型」旁的齒輪圖示 ⚙️</li>
+                            <li>選擇「<strong>網頁應用程式</strong>」</li>
+                        </ul>
+                    </div>
+
+                    <div class="tutorial-step">
+                        <h4>5. 設定部署選項</h4>
+                        <ul>
+                            <li><strong>說明</strong>：可填寫「文章發布 API」或任何您喜歡的名稱</li>
+                            <li><strong>執行身分</strong>：選擇「<strong>我</strong>」</li>
+                            <li><strong>誰可以存取</strong>：選擇「<strong>任何人</strong>」⚠️ 這很重要！</li>
+                            <li>點擊「<strong>部署</strong>」</li>
+                        </ul>
+                        <p class="warning">⚠️ 如果選擇「僅限我自己」，平台將無法寫入資料！</p>
+                    </div>
+
+                    <div class="tutorial-step">
+                        <h4>6. 複製網址</h4>
+                        <ul>
+                            <li>部署完成後，會顯示一個「<strong>網頁應用程式 URL</strong>」</li>
+                            <li>這個網址會類似：<code>https://script.google.com/...../exec</code></li>
+                            <li>點擊「<strong>複製</strong>」按鈕</li>
+                            <li>回到本平台，點擊「⚙️ 設定 Apps Script URL」</li>
+                            <li>將網址貼上並按 Enter</li>
+                        </ul>
+                        <p class="success">✅ 完成！現在您可以開始寫作了！</p>
+                    </div>
+                </div>
+
+                <div class="tutorial-section">
+                    <h3>✍️ 如何使用平台</h3>
+
+                    <div class="tutorial-step">
+                        <h4>📝 撰寫文章</h4>
+                        <ul>
+                            <li>點擊左側的「<strong>+ 新增文章</strong>」按鈕</li>
+                            <li>在編輯器中輸入您的內容</li>
+                            <li>系統會<strong>自動儲存</strong>到瀏覽器，不用擔心資料遺失</li>
+                        </ul>
+                    </div>
+
+                    <div class="tutorial-step">
+                        <h4>📋 欄位說明</h4>
+                        <ul>
+                            <li><strong>標題</strong>：文章的主標題（必填）</li>
+                            <li><strong>標籤</strong>：用逗號分隔，例如：科技, 生活, 旅遊</li>
+                            <li><strong>Slug</strong>：網址代稱，例如：my-first-post（可不填，系統會自動產生）</li>
+                            <li><strong>分類</strong>：文章分類，例如：部落格、教學</li>
+                            <li><strong>精選圖片</strong>：可貼上圖片網址，或點擊「📁 上傳」選擇本地圖片</li>
+                        </ul>
+                    </div>
+
+                    <div class="tutorial-step">
+                        <h4>🚀 發布文章</h4>
+                        <ul>
+                            <li>填寫完標題和內容後，點擊「<strong>🚀 發佈</strong>」</li>
+                            <li>系統會將文章傳送到您的 Google Sheet</li>
+                            <li>前往 Google Sheet 確認資料是否成功寫入</li>
+                        </ul>
+                    </div>
+
+                    <div class="tutorial-step">
+                        <h4>💾 儲存草稿</h4>
+                        <ul>
+                            <li>按下 <code>Ctrl+S</code>（Mac 用 <code>Cmd+S</code>）可手動儲存</li>
+                            <li>或點擊「<strong>💾 儲存</strong>」按鈕</li>
+                            <li>所有草稿都儲存在您的瀏覽器中，不會上傳到網路</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="tutorial-section">
+                    <h3>📱 手機版操作</h3>
+                    <ul>
+                        <li>點擊左上角的「<strong>☰</strong>」按鈕可開啟草稿列表</li>
+                        <li>點擊遮罩或選擇草稿後會自動關閉側邊欄</li>
+                        <li>所有功能與電腦版相同</li>
+                    </ul>
+                </div>
+
+                <div class="tutorial-section">
+                    <h3>💡 常見問題</h3>
+
+                    <div class="tutorial-step">
+                        <h4>Q: 為什麼點擊發佈後沒有反應？</h4>
+                        <p>A: 由於瀏覽器安全限制，無法直接顯示成功訊息。請前往您的 Google Sheet 確認資料是否已寫入。</p>
+                    </div>
+
+                    <div class="tutorial-step">
+                        <h4>Q: 我的草稿會不會遺失？</h4>
+                        <p>A: 草稿儲存在瀏覽器的 Local Storage 中。只要不清除瀏覽器資料，草稿就會一直保留。但建議定期發佈到 Google Sheet 備份。</p>
+                    </div>
+
+                    <div class="tutorial-step">
+                        <h4>Q: 可以在不同電腦上使用嗎？</h4>
+                        <p>A: 草稿是儲存在本地瀏覽器的，無法跨裝置同步。但已發佈的文章都在 Google Sheet 中，可以隨時查看。</p>
+                    </div>
+
+                    <div class="tutorial-step">
+                        <h4>Q: 圖片要怎麼處理？</h4>
+                        <p>A: 建議使用圖床服務（如 Imgur）上傳圖片後，將連結貼到「精選圖片」欄位。直接上傳會轉為 Base64 編碼，檔案較大。</p>
+                    </div>
+                </div>
+
+                <div class="tutorial-section">
+                    <h3>🎉 開始創作吧！</h3>
+                    <p>如果還有任何問題，歡迎查看專案的 README 文件，或在 GitHub 上提出 Issue。</p>
+                    <p class="success">祝您寫作愉快！✨</p>
+                </div>
+            </div>
         </div>
     </div>
 

@@ -351,7 +351,24 @@ function sendToSheet() {
             setTimeout(() => { statusDiv.style.display = 'none'; }, 3000); // 3秒後隱藏提示
         })
         .catch(error => {
-            statusDiv.className = '';
             statusDiv.innerText = '❌ 發送失敗';
         });
 }
+
+// --- 教學 Modal 控制 ---
+function openTutorialModal() {
+    document.getElementById('tutorial-modal').classList.add('active');
+    document.body.style.overflow = 'hidden'; // 防止背景滾動
+}
+
+function closeTutorialModal() {
+    document.getElementById('tutorial-modal').classList.remove('active');
+    document.body.style.overflow = ''; // 恢復滾動
+}
+
+// ESC 鍵關閉 Modal
+document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+        closeTutorialModal();
+    }
+});
